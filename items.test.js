@@ -1,15 +1,13 @@
 process.env.NODE_ENV = "test";
-const { ExpectationFailed } = require('http-errors');
-const { test } = require('media-typer');
 const request = require('supertest');
 
 const app = require('./app');
 let items = require('./fakeDb');
 
-let milk = {name: "milk", price: 5.99};
+let testItem = {name: "milk", price: 5.99};
 
 beforeEach(function() {
-    items.push(milk);
+    items.push(testItem);
 });
 
 afterEach(function() {
@@ -30,35 +28,45 @@ describe('POST /items', function() {
         const resp = await request(app)
         .post('/items')
         .send({
-            name: 'eggs',
-            price: 3.99
+            "name": 'eggs',
+            "price": 3.99
         });
         
         expect(resp.statusCode).toBe(201);
-        expect(resp.body).toEqual({item: {name: "eggs", price: 3.99}});
+        expect(resp.body).toEqual({"added": { newItem: {name: "eggs", price: 3.99}}});
     });
 });
 
 describe('GET /items/:name', function() {
     test('gets single item', async function() {
-        const resp = await request(app).get('/items/milk');
+        const resp = await request(app).get(`/items/${testItem.name}`);
         
         expect(resp.statusCode).toBe(200);
-        expect(resp.body).toEqual({items: [{name: "milk", price: 5.99}]});
+        expect(resp.body).toEqual({item: {name: "milk", price: 5.99}});
     });
 });
 
 describe('PATCH /items/:name', function() {
     test('updates single item', async function() {
         const resp = await request(app)
-        .patch(`/items/${milk.name}`)
+        .patch(`/items/${testItem.name}`)
         .send({
             name: 'whole milk',
             price: 2.99
         });
         
         expect(resp.statusCode).toBe(200);
-        expect(resp.body).toEqual({items: [{name: "whole milk", price: 2.99}]});
+        expect(resp.body).toEqual({"updated": {item: {name: "whole milk", price: 2.99}}});
+    });
+});
+
+describe('DELETE /items/:name', function() {
+    test('deletes single item', async function() {
+        const resp = await request(app)
+        .delete(`/items/${testItem.name}`);
+        
+        expect(resp.statusCode).toBe(200);
+        expect(resp.body).toEqual({message: "Deleted"});
     });
 });
 
